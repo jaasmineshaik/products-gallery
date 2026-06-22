@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products Gallery</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#FFD1DC;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:25px;
+    color:#333;
+}
+
+#searchInput,
+#categoryFilter{
+    width:50%;
+    padding:12px;
+    display:block;
+    margin:0 auto 15px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    font-size:16px;
+    outline:none;
+}
+
+#products{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+}
+
+.card{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    transition:0.3s;
+    cursor:pointer;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.card img{
+    width:100%;
+    height:250px;
+    object-fit:cover;
+    border-radius:10px;
+}
+
+.card h3{
+    margin-top:10px;
+    color:#333;
+}
+
+.card p{
+    margin-top:8px;
+    color:green;
+    font-weight:bold;
+    font-size:18px;
+}
+
+#details{
+    display:none;
+    margin-top:30px;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    position:relative;
+}
+
+#details img{
+    width:300px;
+    max-width:100%;
+    border-radius:10px;
+}
+
+.close-btn{
+    position:absolute;
+    right:15px;
+    top:10px;
+    background:red;
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+.close-btn:hover{
+    opacity:0.8;
+}
+
+.info{
+    margin-top:15px;
+}
+
+.info p{
+    margin-bottom:10px;
+    line-height:1.6;
+}
+
+@media(max-width:768px){
+
+    #products{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    #searchInput,
+    #categoryFilter{
+        width:80%;
+    }
+}
+
+@media(max-width:500px){
+
+    #products{
+        grid-template-columns:1fr;
+    }
+
+    #searchInput,
+    #categoryFilter{
+        width:100%;
+    }
+}
+</style>
+</head>
+<body>
+
+<h1>Products Gallery</h1>
+
+<input
+    type="text"
+    id="searchInput"
+    placeholder="Search Product..."
+>
+
+<select id="categoryFilter">
+    <option value="all">All Categories</option>
+</select>
+
+<div id="products"></div>
+
+<div id="details"></div>
+
+<script>
+
+const productsContainer = document.getElementById("products");
+const searchInput = document.getElementById("searchInput");
+const categoryFilter = document.getElementById("categoryFilter");
+const details = document.getElementById("details");
+
+let allProducts = [];
+
+// Fetch products
+fetch("https://dummyjson.com/products?limit=100")
+.then(response => response.json())
+.then(data => {
+
+    allProducts = data.products;
+
+    displayProducts(allProducts);
+
+    // Load categories
+    const categories = [
+        ...new Set(allProducts.map(product => product.category))
+    ];
+
+    categories.forEach(category => {
+
+        const option = document.createElement("option");
+
+        option.value = category;
+        option.textContent =
+            category.charAt(0).toUpperCase() +
+            category.slice(1);
+
+        categoryFilter.appendChild(option);
+    });
+
+})
+.catch(error => {
+
+    console.log(error);
+
+    productsContainer.innerHTML =
+        "<h2>Failed to load products.</h2>";
+});
+
+
+// Display Products
+function displayProducts(products){
+
+    productsContainer.innerHTML = "";
+
+    if(products.length === 0){
+
+        productsContainer.innerHTML =
+            "<h2>No products found.</h2>";
+
+        return;
+    }
+
+    products.forEach(product => {
+
+        const priceInRupees =
+            Math.round(product.price * 85);
+
+        const card = document.createElement("div");
+
+        card.classList.add("card");
+
+        card.innerHTML = `
+            <img src="${product.thumbnail}" alt="${product.title}">
+            <h3>${product.title}</h3>
+            <p>₹${priceInRupees}</p>
+        `;
+
+        card.addEventListener("click", () => {
+
+            details.style.display = "block";
+
+            details.innerHTML = `
+                <button class="close-btn" onclick="closeDetails()">
+                    X
+                </button>
+
+                <h2>${product.title}</h2>
+
+                <br>
+
+                <img src="${product.thumbnail}" alt="${product.title}">
+
+                <div class="info">
+
+                    <p>
+                        <strong>Description:</strong>
+                        ${product.description}
+                    </p>
+
+                    <p>
+                        <strong>Category:</strong>
+                        ${product.category}
+                    </p>
+
+                    <p>
+                        <strong>Brand:</strong>
+                        ${product.brand || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Price:</strong>
+                        ₹${priceInRupees}
+                    </p>
+
+                    <p>
+                        <strong>Rating:</strong>
+                        ⭐ ${product.rating}
+                    </p>
+
+                    <p>
+                        <strong>Stock:</strong>
+                        ${product.stock}
+                    </p>
+
+                </div>
+            `;
+
+            details.scrollIntoView({
+                behavior:"smooth"
+            });
+
+        });
+
+        productsContainer.appendChild(card);
+    });
+}
+
+
+// Filter Products
+function filterProducts(){
+
+    const searchQuery =
+        searchInput.value.toLowerCase();
+
+    const selectedCategory =
+        categoryFilter.value;
+
+    const filteredProducts =
+        allProducts.filter(product => {
+
+            const matchesSearch =
+                product.title
+                .toLowerCase()
+                .includes(searchQuery);
+
+            const matchesCategory =
+                selectedCategory === "all" ||
+                product.category === selectedCategory;
+
+            return matchesSearch &&
+                   matchesCategory;
+        });
+
+    displayProducts(filteredProducts);
+}
+
+
+// Events
+searchInput.addEventListener(
+    "input",
+    filterProducts
+);
+
+categoryFilter.addEventListener(
+    "change",
+    filterProducts
+);
+
+
+// Close Details
+function closeDetails(){
+
+    details.style.display = "none";
+
+    details.innerHTML = "";
+}
+
+</script>
+
+</body>
+</html>
+```
